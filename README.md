@@ -58,7 +58,7 @@ langgraph-basics/
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/yourusername/langgraph-basics.git
+   git clone https://github.com/aqsaa2/LangGraph_AI_Agent_Implementations.git
    cd langgraph-basics
    ```
 
