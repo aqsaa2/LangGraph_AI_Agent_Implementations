@@ -1,139 +1,93 @@
+# 🧠 Mastering LangGraph Basics
 
-# LangGraph RAG Chatbot
-
-This project implements a **Retrieval-Augmented Generation (RAG)** chatbot using **LangGraph**, **LangChain**, and **OpenAI**. It supports conversational memory and document-based retrieval using a PDF, allowing natural language querying over documents.
-
----
-
-## 🚀 Features
-
-- ✅ Conversational chatbot with memory (via `ConversationBufferMemory`)
-- ✅ PDF ingestion using LangChain's `PyPDFLoader`
-- ✅ Vector-based retrieval using `FAISS`
-- ✅ Custom RAG flow using LangGraph's stateful nodes and graph-based control
-- ✅ Integration with OpenAI's GPT models (GPT-4, GPT-3.5)
+This project is a hands-on exploration of the **LangGraph** framework based on its official documentation. The implementation covers fundamental modules such as building a chatbot, adding tools and memory, incorporating human-in-the-loop workflows, customizing state, and exploring time travel functionalities.
 
 ---
 
-## 🛠️ Technologies Used
+## 📌 Objective
 
-- Python 3.10+
-- [LangGraph](https://github.com/langchain-ai/langgraph)
-- [LangChain](https://github.com/langchain-ai/langchain)
-- FAISS for vector similarity search
-- OpenAI (for LLM)
-- tiktoken (for token counting)
+Gain a deep understanding of LangGraph by reading the official documentation and implementing the core examples from the "LangGraph basics" section.
+
+---
+
+## 🚀 Key Features Implemented
+
+### 1. **Build a Basic Chatbot**
+- Simple conversational bot using LangGraph nodes and edges.
+- Demonstrates how to define a state and respond to user inputs.
+
+### 2. **Add Tools**
+- Integrated external tools into the LangGraph workflow.
+- Example includes using a calculator or search function as part of the response generation.
+
+### 3. **Add Memory**
+- Enabled conversational memory to retain context over multiple turns.
+- Showcases LangGraph’s compatibility with memory modules like LangChain’s memory systems.
+
+### 4. **Human-in-the-Loop**
+- Added decision points where human feedback or input is required.
+- Demonstrates branching logic for manual control.
+
+### 5. **Customize State**
+- Custom state management logic implemented.
+- Flexible handling of structured and dynamic state transitions.
+
+### 6. **Time Travel**
+- Utilized LangGraph’s state checkpoint and rollback features.
+- Allows reverting to previous states for testing and debugging.
 
 ---
 
 ## 📁 Folder Structure
 
 ```
-langgraph_chatbot/
-├── main.py             # Main file to run the chatbot
-├── state.py            # Defines the State object for LangGraph
-├── nodes.py            # Contains graph nodes for RAG and conversation
-├── graph.py            # Builds and compiles the LangGraph graph
-├── ingest.py           # Loads PDF, chunks it, and creates FAISS retriever
-├── utils.py            # Utility functions for setup and environment
-├── README.md           # This file
-└── .env                # Contains API keys (not included in repo)
+langgraph-basics/
+│
+├── chatbot.ipynb
+├── add_tools.ipynb
+├── memory.ipynb
+├── human_loop.ipynb
+├── customize_state.ipynb
+├── time_travel.ipynb
+└── README.md
 ```
 
 ---
 
-## 📦 Installation
+## 🛠️ How to Run
 
-1. **Clone the repository**
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/yourusername/langgraph-basics.git
+   cd langgraph-basics
+   ```
 
-```bash
-git clone https://github.com/yourusername/langgraph_chatbot.git
-cd langgraph_chatbot
-```
+2. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-2. **Create a virtual environment (optional but recommended)**
-
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. **Install the dependencies**
-
-```bash
-pip install -r requirements.txt
-```
-
-> You can also install manually:
-```bash
-pip install langchain langgraph openai faiss-cpu tiktoken python-dotenv
-```
+3. **Run Jupyter Notebooks**
+   ```bash
+   jupyter notebook
+   ```
+   Open and run each notebook (`*.ipynb`) sequentially.
 
 ---
 
-## 🔑 Environment Variables
+## 🧠 Key Takeaways
 
-Create a `.env` file in the project root with the following:
-
-```
-OPENAI_API_KEY=your_openai_api_key
-```
+- LangGraph provides a graph-based approach to building LLM workflows.
+- It supports modular, transparent design and stateful execution.
+- Easily integrates with LangChain for tools, memory, and agents.
 
 ---
 
-## 📄 Add Your Document
-
-Place your PDF file in the root directory (e.g., `sample.pdf`), or change the path inside `ingest.py`.
-
----
-
-## ▶️ Running the Chatbot
-
-To run the chatbot:
-
-```bash
-python main.py
-```
-
-You’ll enter a command-line interface (CLI) where you can chat with your document-based assistant.
-
----
-
-## 🧠 Key Implementation Details
-
-- **Graph-based Flow**: LangGraph lets us build a directed graph of nodes:
-  - `ingest.py`: Loads and processes the PDF.
-  - `nodes.py`: Defines two nodes:
-    - `retrieve_docs`: Uses the retriever to fetch top-k relevant chunks.
-    - `call_rag_chain`: Constructs the prompt and calls OpenAI GPT model.
-  - `graph.py`: Builds the flow:
-    ```
-    user_input → retrieve_docs → call_rag_chain → output
-    ```
-- **Memory**: Uses `ConversationBufferMemory` to maintain context between user messages.
-- **Document Ingestion**:
-  - Splits PDF into ~800 token chunks with 50-token overlap.
-  - Embeds chunks using OpenAI Embeddings.
-  - Stores vectors in FAISS index.
-
----
-
-## 🧩 Optional Enhancements
-
-- 🔧 Add Streamlit or Gradio frontend
-- 🧠 Replace `ConversationBufferMemory` with `ConversationSummaryBufferMemory` for long chats
-- 💾 Save and load vectorstore from disk
-- 📊 Add analytics like token usage or response times
-- 📚 Allow multiple document ingestion
+## 📅 Date Completed
+2025-05-19
 
 ---
 
 ## 📬 Contact
+For any questions, feel free to raise an issue or contact the developer.
 
-For support or questions, open an issue or contact the maintainer at [your-email@example.com].
-
----
-
-## 📜 License
-
-This project is licensed under the MIT License.
