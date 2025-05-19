@@ -81,13 +81,4 @@ langgraph-basics/
 - It supports modular, transparent design and stateful execution.
 - Easily integrates with LangChain for tools, memory, and agents.
 
----
-
-## 📅 Date Completed
-2025-05-19
-
----
-
-## 📬 Contact
-For any questions, feel free to raise an issue or contact the developer.
 
