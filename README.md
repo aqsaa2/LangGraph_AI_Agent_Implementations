@@ -1,4 +1,4 @@
-# 🧠 Mastering LangGraph Basics
+# Mastering LangGraph Basics
 
 This project is a hands-on exploration of the **LangGraph** framework based on its official documentation. The implementation covers fundamental modules such as building a chatbot, adding tools and memory, incorporating human-in-the-loop workflows, customizing state, and exploring time travel functionalities.
 
