@@ -1,110 +1,128 @@
-from typing import Annotated, Dict, List, Any
+# This code builds a LangGraph-powered conversational agent 
+# that uses tools (search, human help), supports pausing for 
+# human input, and keeps memory using a structured state.
+
+import os
+from dotenv import load_dotenv
+from typing import Annotated
 from typing_extensions import TypedDict
-
-from langgraph.graph import StateGraph, END
+from langchain_tavily import TavilySearch
 from langgraph.graph.message import add_messages
-from langgraph.types import Command, interrupt
-
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import InjectedToolCallId, tool
+from langgraph.types import Command, interrupt
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import StateGraph, START, END
+from langgraph.prebuilt import ToolNode, tools_condition
+from langchain.chat_models import init_chat_model
 
-from langchain_core.runnables import RunnableLambda
+# Load environment variables
+load_dotenv()
+
+# Initialize the chat model
+llm = init_chat_model("google_genai:gemini-2.0-flash")
 
 
-# 1. Generalized State to handle any key-value pairs
-class GeneralState(TypedDict):
-    messages: Annotated[List, add_messages]
-    data: Dict[str, Any]
+# Define state
+class State(TypedDict):
+    messages: Annotated[list, add_messages]
+    name: str
+    birthday: str
 
-
-# 2. Human assistance tool (dynamic fields)
+# Define the human assistance tool
+# Used the human_assistance tool to introduce a controlled 
+# interruption for manual human input before updating the state.
 @tool
 def human_assistance(
-    data: Dict[str, Any],
-    tool_call_id: Annotated[str, InjectedToolCallId]
-) -> Command:
-    """Request human review of arbitrary data."""
+    name: str, birthday: str, tool_call_id: Annotated[str, InjectedToolCallId]
+) -> str:
+    """Request assistance from a human."""
     human_response = interrupt(
         {
-            "question": "Is this information correct?",
-            "data": data
-        }
-    )
-    
-    if human_response.get("correct", "").lower().startswith("y"):
-        verified_data = data
-        response = "Verified as correct"
-    else:
-        # Use human-provided corrections
-        verified_data = human_response.get("data", data)
-        response = f"Corrections applied: {verified_data}"
-
-    return Command(update={
-        "data": verified_data,
-        "messages": [ToolMessage(content=response, tool_call_id=tool_call_id)]
-    })
-
-
-# 3. A sample node that simulates a lookup and calls human review
-def lookup_node(state: GeneralState) -> Command:
-    # Simulate extracting key-value data from user question
-    extracted_data = {
-        "LangGraph": "Jan 17, 2024",
-        "Python": "Feb 20, 1991"
-    }
-    return Command(
-        add={
-            "messages": [{"role": "system", "content": "Extracted info, sending to human_assistance"}],
+            "question": "Is this correct?",
+            "name": name,
+            "birthday": birthday,
         },
-        invoke={
-            "human_assistance": {
-                "data": extracted_data
-            }
-        }
     )
+    if human_response.get("correct", "").lower().startswith("y"):
+        verified_name = name
+        verified_birthday = birthday
+        response = "Correct"
+    else:
+        verified_name = human_response.get("name", name)
+        verified_birthday = human_response.get("birthday", birthday)
+        response = f"Made a correction: {human_response}"
+
+    state_update = {
+        "name": verified_name,
+        "birthday": verified_birthday,
+        "messages": [ToolMessage(response, tool_call_id=tool_call_id)],
+    }
+    return Command(update=state_update)
 
 
-# 4. Define the Graph
-builder = StateGraph(GeneralState)
+tool = TavilySearch(max_results=2)
+tools = [tool, human_assistance]
 
-builder.add_node("lookup", lookup_node)
-builder.add_node("human_assistance", human_assistance)
+llm_with_tools = llm.bind_tools(tools)
 
-# Workflow: lookup -> human_assistance -> END
-builder.set_entry_point("lookup")
-builder.add_edge("lookup", "human_assistance")
-builder.add_edge("human_assistance", END)
+# Define chatbot node
+def chatbot(state: State):
+    message = llm_with_tools.invoke(state["messages"])
+    assert len(message.tool_calls) <= 1
+    return {"messages": [message]}
 
-# 5. Build the graph
-graph = builder.compile()
+# Build graph
+graph_builder = StateGraph(State)
+graph_builder.add_node("chatbot", chatbot)
+tool_node = ToolNode(tools=tools)
+graph_builder.add_node("tools", tool_node)
 
+graph_builder.add_conditional_edges("chatbot", tools_condition)
+graph_builder.add_edge("tools", "chatbot")
+graph_builder.add_edge(START, "chatbot")
 
-# 6. Run a session
+memory = MemorySaver()
+graph = graph_builder.compile(checkpointer=memory)
+
+# Now you can run the graph
+user_input = (
+    "Can you look up when LangGraph was released? "
+    "When you have the answer, use the human_assistance tool for review."
+)
 config = {"configurable": {"thread_id": "1"}}
-user_input = "When was Python released? Review it via human_assistance."
-
+# Stream the graph with user input
 events = graph.stream(
-    {"messages": [{"role": "user", "content": user_input}]},
+    {"messages": [{"role": "user", "content": user_input}], "name": "", "birthday": ""},
     config,
     stream_mode="values",
 )
-
-print(">>> INITIAL STREAM")
 for event in events:
     if "messages" in event:
-        print(event["messages"][-1].content)
+        event["messages"][-1].pretty_print()
 
-# 7. Human review command (simulating human)
-human_command = Command(resume={"data": {"LangGraph": "Jan 17, 2024", "Python": "Feb 20, 1991"}})
+human_command = Command(
+    resume={
+        "name": "LangGraph",
+        "birthday": "Jan 17, 2024",
+    },
+)
+# The human command is used to update the state
+# with the information provided by the human
+# The human command is used to update the state
 
 events = graph.stream(human_command, config, stream_mode="values")
-
-print("\n>>> AFTER HUMAN REVIEW")
 for event in events:
     if "messages" in event:
-        print(event["messages"][-1].content)
+        event["messages"][-1].pretty_print()
 
-# 8. Inspect the final state
 snapshot = graph.get_state(config)
-print("\n>>> FINAL STATE DATA:")
-print(snapshot.values["data"])
+# Get the state of the graph
+# after the human command
+{k: v for k, v in snapshot.values.items() if k in ("name", "birthday")}
+
+graph.update_state(config, {"name": "LangGraph (library)"})
+
+snapshot = graph.get_state(config)
+
+{k: v for k, v in snapshot.values.items() if k in ("name", "birthday")}
