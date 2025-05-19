@@ -75,7 +75,7 @@ langgraph-basics/
 
 ---
 
-## 🧠 Key Takeaways
+## Key Takeaways
 
 - LangGraph provides a graph-based approach to building LLM workflows.
 - It supports modular, transparent design and stateful execution.
